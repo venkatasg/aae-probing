@@ -77,14 +77,14 @@ if __name__ == '__main__':
     rowspace_projections = np.stack(rowspace_projections, axis=0)          
     
     
-    # with open("reps_hate/Ws.layer={}.iters={}.seed={}.cls={}.npy".format(args.layer, args.num_classifiers, args.seed, args.cls), "wb") as f:
-#         np.save(f, Ws)
+    with open("reps_hate/Ws.layer={}.iters={}.seed={}.cls={}.npy".format(args.layer, args.num_classifiers, args.seed, args.cls), "wb") as f:
+        np.save(f, Ws)
 #         
 #     with open("reps_hate/rowspace.layer={}.iters={}.seed={}.cls={}.npy".format(args.layer, args.num_classifiers, args.seed, args.cls), "wb") as f:
 #         np.save(f, rowspace_projections)
 #         
-#     with open("reps_hate/P.layer={}.iters={}.seed={}.cls={}.npy".format(args.layer, args.num_classifiers, args.seed, args.cls), 'wb') as f:    
-#         np.save(f, P)
+    with open("reps_hate/P.layer={}.iters={}.seed={}.cls={}.npy".format(args.layer, args.num_classifiers, args.seed, args.cls), 'wb') as f:    
+        np.save(f, P)
         
     
     
