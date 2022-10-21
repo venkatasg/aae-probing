@@ -1,6 +1,6 @@
 from typing import Dict
 import numpy as np
-import scipy
+from scipy import linalg
 from typing import List
 from tqdm import tqdm
 from inlp import classifier
@@ -17,7 +17,7 @@ def get_rowspace_projection(W: np.ndarray) -> np.ndarray:
     if np.allclose(W, 0):
         w_basis = np.zeros_like(W.T)
     else:
-        w_basis = scipy.linalg.orth(W.T) # orthogonal basis
+        w_basis = linalg.orth(W.T) # orthogonal basis
     
     w_basis = w_basis * np.sign(w_basis[0][0]) # handle sign ambiguity
     P_W = w_basis.dot(w_basis.T) # orthogonal projection on W's rowspace
@@ -116,7 +116,7 @@ def get_debiasing_projection(classifier_class, cls_params: Dict, num_classifiers
         acc = clf.train_network((X_train_cp * dropout_mask)[relevant_idx_train], Y_train[relevant_idx_train], X_dev_cp[relevant_idx_dev], Y_dev[relevant_idx_dev])
         # pbar.set_description("iteration: {}, accuracy: {}".format(i, acc))
         if acc < min_accuracy: continue
-        accs.append(acc)
+        accs.append(np.round(acc, 3))
         
         W = clf.get_weights()
         Ws.append(W)
@@ -150,6 +150,43 @@ def get_debiasing_projection(classifier_class, cls_params: Dict, num_classifiers
 
     return P, rowspace_projections, Ws, accs
 
+def get_random_projection(classifier_class, cls_params: Dict, num_classifiers: int, input_dim: int, is_autoregressive: bool, min_accuracy: float, X_dev: np.ndarray, Y_dev: np.ndarray, by_class=True, Y_train_main=None,Y_dev_main=None, dropout_rate = 0):
+    '''
+        Get debiasing projections with random SVM vectors
+    '''
+    
+    rowspace_projections = []
+    Ws = []
+    accs = []
+    
+    X_dev_cp = X_dev.copy()
+    
+    for i in range(num_classifiers):
+        
+        ## Set weights randomly from normal distribution
+        random_w = np.random.randn(1, input_dim)
+        clf = classifier.SKlearnClassifier(classifier_class(**cls_params))
+        clf.set_weights(w=random_w)
+        
+        acc = clf.evaluate(X_dev_cp, Y_dev)
+        # pbar.set_description("iteration: {}, accuracy: {}".format(i, acc))
+        if acc < min_accuracy: continue
+        accs.append(np.round(acc,3))
+        
+        W = clf.get_weights()
+        Ws.append(W)
+        P_rowspace_wi = get_rowspace_projection(W) # projection to W's rowspace
+        rowspace_projections.append(P_rowspace_wi)
+        
+        if is_autoregressive:
+            P = get_projection_to_intersection_of_nullspaces(rowspace_projections, input_dim)
+            # project  
+                      
+            X_dev_cp = (P.dot(X_dev.T)).T
+
+    P = get_projection_to_intersection_of_nullspaces(rowspace_projections, input_dim)
+
+    return P, rowspace_projections, Ws, accs
 
 if __name__ == '__main__':
     

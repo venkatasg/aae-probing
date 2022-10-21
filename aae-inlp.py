@@ -1,25 +1,14 @@
 '''
-Learn INLP directions for high accuracy prediction of dialect from CLS tokens
+Train iNLP classifier on tokens
 '''
 
-import pandas as pd
-import numpy as np
 import numpy as np
 import random
-from scipy.special import softmax
-from datasets import Dataset
-from datasets import logging
-import torch
-import gc
 import ipdb
 import argparse
-import csv
-from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 from sklearn.utils import shuffle
 from inlp import debias
-
-logging.disable_progress_bar()
 
 
 def run_inlp(num_classifiers, dialect, reps, seed):
@@ -36,9 +25,14 @@ def run_inlp(num_classifiers, dialect, reps, seed):
     params = {"max_iter": 10000, "dual": False, "random_state": seed}
     
     
-    P, rowspace_projections, Ws, accs = debias.get_debiasing_projection(classifier_class=clf, cls_params=params, num_classifiers=num_classifiers, input_dim=768, is_autoregressive=True, min_accuracy=0, X_train=x_train, Y_train=y_train, X_dev=x_dev, Y_dev=y_dev, by_class = False)
-    print(accs[-5:])
-    return P, rowspace_projections, Ws
+    _, _, Ws_rand, accs_rand = debias.get_random_projection(classifier_class=clf, cls_params=params, num_classifiers=num_classifiers, input_dim=768, is_autoregressive=True, min_accuracy=0, X_dev=x_dev, Y_dev=y_dev, by_class = False)
+    
+    _, _, Ws, accs = debias.get_debiasing_projection(classifier_class=clf, cls_params=params, num_classifiers=num_classifiers, input_dim=768, is_autoregressive=True, min_accuracy=0, X_train=x_train, Y_train=y_train, X_dev=x_dev, Y_dev=y_dev, by_class = False)
+    
+    print("Classifier accuracies:", accs)
+    print("Random accuracies:", accs_rand)    
+    
+    return Ws, Ws_rand
 
 
 if __name__ == '__main__':
@@ -70,19 +64,14 @@ if __name__ == '__main__':
     # Shuffling the arrays
     reps, dialect = shuffle(reps, dialect, random_state=args.seed)
 
-    P, rowspace_projections, Ws = run_inlp(num_classifiers=args.num_classifiers, dialect=dialect, reps=reps, seed=args.seed)
+    Ws, Ws_rand = run_inlp(num_classifiers=args.num_classifiers, dialect=dialect, reps=reps, seed=args.seed)
     
-    # concatenate lists into one numpy array
-    Ws = np.concatenate(Ws)       
-    rowspace_projections = np.stack(rowspace_projections, axis=0)          
-    
+    Ws = np.concatenate(Ws)    
+    Ws_rand = np.concatenate(Ws_rand)          
     
     with open("reps_hate/Ws.layer={}.iters={}.seed={}.cls={}.npy".format(args.layer, args.num_classifiers, args.seed, args.cls), "wb") as f:
         np.save(f, Ws)
-#         
-#     with open("reps_hate/rowspace.layer={}.iters={}.seed={}.cls={}.npy".format(args.layer, args.num_classifiers, args.seed, args.cls), "wb") as f:
-#         np.save(f, rowspace_projections)
-#         
+        
     with open("reps_hate/P.layer={}.iters={}.seed={}.cls={}.npy".format(args.layer, args.num_classifiers, args.seed, args.cls), 'wb') as f:    
         np.save(f, P)
         

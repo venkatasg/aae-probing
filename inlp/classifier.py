@@ -49,6 +49,12 @@ class SKlearnClassifier(Classifier):
         self.model.fit(X_train, Y_train.ravel())#, coef_init = np.zeros(768))
         score = self.model.score(X_dev, Y_dev.ravel())
         return score
+    
+    def evaluate(self, X_dev: np.ndarray, Y_dev: np.ndarray) -> float:
+        
+        score = self.model.score(X_dev, Y_dev.ravel())
+        
+        return score
 
     def get_weights(self) -> np.ndarray:
         """
@@ -60,3 +66,12 @@ class SKlearnClassifier(Classifier):
                 w = np.expand_dims(w, 0)
 
         return w
+    
+    def set_weights(self, w):
+        """
+        :return: set random attributes for model
+        """
+
+        self.model.coef_ = w
+        self.model.intercept_ = 0
+        self.model.classes_ = np.array([0,1])
