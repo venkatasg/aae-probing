@@ -7,6 +7,7 @@ import pandas as pd
 import random
 import numpy as np
 import ipdb
+import csv
 import argparse
 from transformers import (
     AutoModelForSequenceClassification,
@@ -108,7 +109,7 @@ if __name__ == '__main__':
     
     for _, input_dict in enumerate(dataloader):
         with torch.no_grad():
-            output = model(**input_dict)
+            outputs = model(**input_dict)
             
         # Extract ith layer activations
         layer_hidden_state = outputs['hidden_states'][args.layer].detach().cpu().numpy()
@@ -131,7 +132,7 @@ if __name__ == '__main__':
             rep_dim0 =  torch.repeat_interleave(torch.tensor(i), 5)
             sampled_inds_dim0 = torch.cat((sampled_inds_dim0, rep_dim0), axis=0)
         
-        sampled_reps = layer_hidden_state[sampled_inds_dim0, sampled_inds_dim1,:].detach().cpu().numpy()
+        sampled_reps = layer_hidden_state[sampled_inds_dim0, sampled_inds_dim1,:]
         all_reps = np.concatenate((all_reps, sampled_reps), 0)
         
         b_dialects = input_dict['labels'].detach().cpu().numpy()
@@ -142,6 +143,6 @@ if __name__ == '__main__':
     with open('reps/acts_layer_' + str(args.layer) + '_seed_' + str(args.seed) + '.npy', 'wb') as f:
         np.save(f, all_reps)
         
-    with open('reps/dialect_' + '_seed_' + str(args.seed) + '.npy', 'wb') as f:
+    with open('reps/dialect_seed_' + str(args.seed) + '.npy', 'wb') as f:
         np.save(f, dialect)
     

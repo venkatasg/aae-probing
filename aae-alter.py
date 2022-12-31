@@ -9,6 +9,7 @@ import pandas as pd
 import random
 import numpy as np
 import ipdb
+import csv
 import argparse
 from transformers import (
     AutoModelForSequenceClassification,
@@ -18,8 +19,8 @@ from transformers import (
 )
 from accelerate import Accelerator
 from datasets import Dataset, logging as loggingd
-import evaluate
 from inlp.debias import debias_by_specific_directions
+from collections import Counter
 
 # Logging level for datasets
 loggingd.disable_progress_bar()
@@ -39,7 +40,7 @@ def preprocess(text):
         new_text.append(t)
     return " ".join(new_text)
     
-def intervention(h_out, P, ws, cls, alpha):
+def intervention(h_out, P, ws, alpha):
     '''
     Perform amnesic, positive or negative intervention
     alpha=0 : Amnesic
@@ -147,18 +148,19 @@ if __name__ == '__main__':
     if args.num_classifiers > 0:
         # Load iNLP parameters
         if not args.control:
-            with open("reps_hate/Ws.layer={}.seed={}.npy".format(args.layer, args.seed), "rb") as f:
+            with open("reps/Ws.layer={}.seed={}.npy".format(args.layer, args.seed), "rb") as f:
                 Ws = np.load(f)
         else:
-            with open("reps_hate/Ws.rand.layer={}.seed={}.npy".format(args.layer, args.seed), "rb") as f:
+            with open("reps/Ws.rand.layer={}.seed={}.npy".format(args.layer, args.seed), "rb") as f:
                 Ws = np.load(f)
     
         # Reduce Ws to number of classifiers you want
         Ws = Ws[:args.num_classifiers,:]
         
         # Now derive P from Ws
+        list_of_ws = [np.array([Ws[i, :]]) for i in range(Ws.shape[0])]
         P = debias_by_specific_directions(
-            directions=Ws,
+            directions=list_of_ws,
             input_dim=Ws.shape[1]
         )
         
@@ -170,9 +172,9 @@ if __name__ == '__main__':
             Ws = Ws[np.newaxis,:]
         
         # Attach hook
-        hook = model.roberta.encoder.layer[args.layer-1].register_forward_hook(lambda m, h_in, h_out: intervention(h_out=h_out, P=P, ws=Ws, cls=args.cls, alpha=args.alpha))
+        hook = model.roberta.encoder.layer[args.layer-1].register_forward_hook(lambda m, h_in, h_out: intervention(h_out=h_out, P=P, ws=Ws, alpha=args.alpha))
 
-    test_dataloader, model = accelerator.prepare(test_dataloader, model)
+    dataloader, model = accelerator.prepare(dataloader, model)
     
     test_preds = np.array([])
     
@@ -185,20 +187,19 @@ if __name__ == '__main__':
             
         predictions = output['logits'].argmax(dim=1)
         test_preds = np.append(test_preds, predictions.detach().cpu().numpy().flatten())
-    
-    hook.remove()
-
-    print("F1 Score: ", np.round(f1_metric.compute(average='micro')['f1']*100, 1))
+    if args.num_classifiers > 0:
+        hook.remove()
     
     df['pred_dialect'] = test_preds
     
     aave_dict = Counter(df[df['dialect']==1]['pred_dialect'].values)
     sae_dict = Counter(df[df['dialect']==0]['pred_dialect'].values)
-    aave_hate = aave_dict['hate']/(aave_dict['hate'] + aave_dict['not-hate'])
-    sae_hate = sae_dict['hate']/(sae_dict['hate'] + sae_dict['not-hate'])
     
-    print("Hate speech % on AAE:", np.round(aave_hate, 3))
-    print("Hate speech % on SAE:", np.round(sae_hate, 3))
+    aave_hate = aave_dict[1.0]/(aave_dict[1.0] + aave_dict[0.0])
+    sae_hate = sae_dict[1.0]/(sae_dict[1.0] + sae_dict[0.0])
     
-    df = df.loc[:, ['id', 'tweet', 'dialect', 'pred_dialect']]
-    df.to_csv('dialect_post_intervention_seed_' + str(args.seed) + '_layer_' + str(args.layer) + '.tsv', sep='\t', quoting=csv.QUOTE_NONE, na_filter=False, index=None)
+    print("Hate speech % on AAE:", np.round(aave_hate*100, 1))
+    print("Hate speech % on SAE:", np.round(sae_hate*100, 1))
+    
+    # df = df.loc[:, ['id', 'tweet', 'dialect', 'pred_dialect']]
+    # df.to_csv('dialect_post_intervention_seed_' + str(args.seed) + '_layer_' + str(args.layer) + '.tsv', sep='\t', quoting=csv.QUOTE_NONE, na_filter=False, index=None)

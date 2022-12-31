@@ -8,6 +8,8 @@ import random
 import ipdb
 import argparse
 from sklearn.svm import LinearSVC
+from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
 from inlp import debias
 
 
@@ -28,7 +30,7 @@ def run_inlp(num_classifiers, dialect, reps, seed):
     
     _, _, Ws, accs = debias.get_debiasing_projection(classifier_class=clf, cls_params=params, num_classifiers=num_classifiers, input_dim=768, is_autoregressive=True, min_accuracy=0, X_train=x_train, Y_train=y_train, X_dev=x_dev, Y_dev=y_dev, by_class = False)
     
-    print(accs[-5:], accs_rand[-5:])
+    print(accs, accs_rand)
     
     return Ws, Ws_rand
 
@@ -46,7 +48,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--num_classifiers',
         type=int,
-        default=32,
+        default=64,
         help='Number of inlp directions'
     )
     parser.add_argument(
@@ -63,11 +65,11 @@ if __name__ == '__main__':
     np.random.RandomState(args.seed)
     
     # Load the representations
-    reps = np.load('reps_hate/hate_layer_' + str(args.layer) + '_seed_' + str(args.seed) + '.npy')
-    dialect = np.load('reps_hate/dialect_' + '_seed_' + str(args.seed) + '.npy')
+    reps = np.load('reps/acts_layer_' + str(args.layer) + '_seed_' + str(args.seed) + '.npy')
+    dialect = np.load('reps/dialect_seed_' + str(args.seed) + '.npy')
     
     # Shuffling the arrays
-    reps, dialect = shuffle(reps, dialect, random_state=args.seed)
+    reps, dialect = shuffle(reps, dialect)
 
     Ws, Ws_rand = run_inlp(num_classifiers=args.num_classifiers, dialect=dialect, reps=reps, seed=args.seed)
     
