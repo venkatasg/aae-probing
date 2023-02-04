@@ -48,7 +48,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--num_classifiers',
         type=int,
-        default=64,
+        default=32,
         help='Number of inlp directions'
     )
     parser.add_argument(
@@ -56,6 +56,12 @@ if __name__ == '__main__':
         type=int,
         default=1,
         help='Random seed'
+    )
+    parser.add_argument(
+        "--reps_folder",
+        type=str,
+        help="Path to reps",
+        required=True
     )
     args = parser.parse_args()
     
@@ -65,8 +71,8 @@ if __name__ == '__main__':
     np.random.RandomState(args.seed)
     
     # Load the representations
-    reps = np.load('reps/acts_layer_' + str(args.layer) + '_seed_' + str(args.seed) + '.npy')
-    dialect = np.load('reps/dialect_seed_' + str(args.seed) + '.npy')
+    reps = np.load(args.reps_folder + '/acts_layer_' + str(args.layer) + '_seed_' + str(args.seed) + '.npy')
+    dialect = np.load(args.reps_folder + '/dialect_seed_' + str(args.seed) + '.npy')
     
     # Shuffling the arrays
     reps, dialect = shuffle(reps, dialect)
@@ -76,10 +82,10 @@ if __name__ == '__main__':
     Ws = np.concatenate(Ws)
     Ws_rand = np.concatenate(Ws_rand)
     
-    with open("reps/Ws.layer={}.seed={}.npy".format(args.layer, args.seed), "wb") as f:
+    with open(args.reps_folder + "/Ws.layer={}.seed={}.npy".format(args.layer, args.seed), "wb") as f:
         np.save(f, Ws)
         
-    with open("reps/Ws.rand.layer={}.seed={}.npy".format(args.layer, args.seed), "wb") as f:
+    with open(args.reps_folder + "/Ws.rand.layer={}.seed={}.npy".format(args.layer, args.seed), "wb") as f:
         np.save(f, Ws_rand)
     
     
