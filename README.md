@@ -16,9 +16,9 @@ All code used to produce results is present in this repository.
 
 The following bar charts show the proportion of the dataset that was classified as hate speech after intervention, with the transformer layer where the intervention was performed on the X axis. The first bar chart is for the AAE intervention (that is, pushing representations to be more towards the AAE side of the learned linear decision boundary), while the second bar chart is for the SAE intervention.
 
-![Bar chart showing the proportion of the dataset classified as hate speech after intervention on y axis, transformer layer where intervention was performed on x axis, for the intervention that makes model representations 'more AAE'](https://github.com/venkatasg/aae-probing/aae.png?raw=true)
+![Bar chart showing the proportion of the dataset classified as hate speech after intervention on y axis, transformer layer where intervention was performed on x axis, for the intervention that makes model representations 'more AAE'](https://github.com/venkatasg/aae-probing/blob/master/aae.png?raw=true)
 
-![Bar chart showing the proportion of the dataset classified as hate speech after intervention on y axis, transformer layer where intervention was performed on x axis, for the intervention that makes model representations 'more SAE'](https://github.com/venkatasg/aae-probing/sae.png?raw=true)
+![Bar chart showing the proportion of the dataset classified as hate speech after intervention on y axis, transformer layer where intervention was performed on x axis, for the intervention that makes model representations 'more SAE'](https://github.com/venkatasg/aae-probing/blob/master/sae.png?raw=true)
 
 
 
