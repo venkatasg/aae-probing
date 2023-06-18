@@ -1,3 +1,7 @@
 *.npy
 .DS_Store
 inlp/__pycache__
+.ipynb_checkpoints
+*.tsv
+*.sh
+.nova/

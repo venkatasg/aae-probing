@@ -58,7 +58,7 @@ if __name__ == '__main__':
         "--model_name_or_path",
         type=str,
         help="Some hate speech/toxic language classifier model",
-        default='tomh/toxigen_roberta'
+        default='cardiffnlp/twitter-roberta-base-offensive'
     )
     parser.add_argument(
         "--data_path",
@@ -96,8 +96,8 @@ if __name__ == '__main__':
     
     data.set_format(type='torch', columns=['id', 'input_ids', 'attention_mask', 'labels'])
     dataloader = torch.utils.data.DataLoader(data, batch_size=64, shuffle=False)
-    
-    all_reps = np.array([], dtype=np.float32).reshape(0, 768)
+
+    all_reps = np.array([], dtype=np.float32).reshape(0, model.config.hidden_size)
     dialect = np.array([], dtype=np.float32).reshape(0, 1)
     
     # Prepare everything with our `accelerator`.
