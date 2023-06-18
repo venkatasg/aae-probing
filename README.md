@@ -20,7 +20,7 @@ The following bar charts show the proportion of the dataset that was classified 
 
 ![Bar chart showing the proportion of the dataset classified as hate speech after intervention on y axis, transformer layer where intervention was performed on x axis, for the intervention that makes model representations 'more SAE'](https://github.com/venkatasg/aae-probing/blob/master/sae.png?raw=true)
 
-
+Broadly, the results are in-line with what we would expect. Pushing model representations to be more AAE, causes almost all of the utterances in the dataset to be classified as hate-speech (much above the pre-intervention baseline level of hate speech), while pushing towards SAE has the opposite effect.
 
 ## Conclusion
 
